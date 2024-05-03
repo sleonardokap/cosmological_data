@@ -8,14 +8,19 @@ plt.rcParams.update({'font.size': 12})
 from multiprocessing import Pool, cpu_count
 import emcee
 from tqdm import tqdm
+import scipy.linalg as la
+import arviz as az
 
 data=np.loadtxt("OHD.txt")
 z_data=data[:,0]
 H_data=data[:,1]
 H_err= data[:,2]
 errsq=1/H_err**2
-'''print(H_err)
-print(errsq)'''
+h_err_use= H_err**2  # this must be 1/sigma^2 other wise it will be wrong. 
+H_diag=np.diag(h_err_use)
+
+H_inv = la.inv(H_diag)
+
 
 def Hmodel(z, params):
     om0, H0 = params
@@ -28,6 +33,13 @@ def chisq(D,T,err):
     chisq=diffT.dot(errsq.dot(diff))'''
     chisq=np.sum(((D-T)/err)**2)
     return chisq
+
+'''def chisq_H(D,T,err):
+    diff= D-T
+    diffT = diff.T
+    chisq= np.dot(diffT,np.dot(err,diff))
+    return chisq
+    '''
 
 
 def modelparameter(params):
