@@ -1,3 +1,5 @@
+# copyright Saddam Leonardo Kap 
+# For Tutorial go to link: https://youtu.be/u88Goguzm9M
 
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -16,10 +18,10 @@ import getdist
 from getdist import plots, MCSamples
 import scipy.linalg as la
 
-data=np.loadtxt("pantheon_data_M.txt")
-z_data_sn=data[:,0]
-mu_sn=data[:,1]
-cov_data=np.loadtxt("Pantheon_cov_all.cov")
+data=np.loadtxt("pantheon_data_M.txt") # Data columns from pantheon + sample
+z_data_sn=data[:,0]                         # z data column from pantheon + sample
+mu_sn=data[:,1]                             # \mu data column from pantheon + sample
+cov_data=np.loadtxt("Pantheon_cov_all.cov") #Covariance Matrix of Pantheon+ Sample
 cov_mat = cov_data.reshape(1701,1701)
 inverse_covar = la.inv(cov_mat)
 
@@ -70,11 +72,11 @@ def chisq(D,T,err):
 
 def log_prior(params):
     od0, H0, w0 = params
-    if H0 <= 0 or not (40 < H0 < 99):
+    if  not (40 < H0 < 99):
         return -np.inf
-    if od0 <= 0 or not (0.5 < od0 < 1):
+    if  not (0.5 < od0 < 1):
         return -np.inf
-    if not (-1.3 < w0 < -0.6):
+    if not (-1.3 < w0 < -0.3):
         return -np.inf
     
     return 0
@@ -91,7 +93,7 @@ def log_prob(params):
 
 
     chisq_value = chisq(mu_sn, mu, inverse_covar)
-    return -0.5 * chisq_value + prior
+    return -0.5 * chisq_value 
 
 
 
@@ -104,7 +106,7 @@ def bic(log_liklihood,ndim,ndata):
 
 nwalker = 30
 ndim = 3  # Number of model parameters
-niter = 100
+niter = 50000
 
 p0 = np.random.uniform(low=[0.5, 40., -0.8], high=[1, 99, -1.2], size=(nwalker, ndim))
 
@@ -112,17 +114,19 @@ ncpu = cpu_count()
 print("{0} CPUs".format(ncpu))
 
 
-with Pool(processes=7) as pool:
+with Pool(processes=10) as pool:
     sampler = emcee.EnsembleSampler(nwalker, ndim, log_prob,pool=pool)
     sampler.run_mcmc(p0,niter,progress=True)
 
 # Define the initial position of walkers for MCMC
 
+dis=1000
+th=20
 
-chains = sampler.get_chain(flat=True,discard=10, thin=2)
+chains = sampler.get_chain(flat=True,discard=dis, thin=th)
 
 
-samples=sampler.get_chain(discard=10,thin=2,flat=True)
+samples=sampler.get_chain(discard=dis,thin=th,flat=True)
 
 name = ['od0', 'H0', 'w0'] # This is must to generate the MCSamples.
 
@@ -133,20 +137,13 @@ sample2 = MCSamples(samples=samples,names=name, labels=labels1)
 log_likelihoods = sampler.get_log_prob()
 log_likelihood = np.mean(log_likelihoods)
 
-# min_chisq_index = np.argmax(log_likelihoods)
-
-# min_chisq_params = samples[min_chisq_index]
-
-# min_chisq = -2 * log_likelihoods[min_chisq_index]
-
 
 print("log liklihood is ", log_likelihood)
 
 # print("mu values:", lcdm_only_de_sn.mu_model(z_data_sn,p0))
 print("AIC values:", aic(log_likelihood,4))
 
-# print("Parameters with minimum chi^2:", min_chisq_params)
-# print("Minimum chi^2:", min_chisq)
+
 
 aic_value = aic(log_likelihood,ndim)
 bic_value=bic(log_likelihood,ndim,len(z_data_sn))
@@ -194,5 +191,7 @@ g.settings.colorbar_axes_fontsize = 10  # Adjust colorbar fontsize
 g.triangle_plot(sample2,['od0', 'H0', 'w0'], filled=True, contour_colors=['red'],title_limit=1)  # Set contour colors as desired
 
 
-g.export('SN_chain_basic.pdf')
+g.export('SN_chain_git.pdf')
 
+
+# The triangular plot has been updated in the main section. Follow the file name "SN_chain_git.pdf" 
