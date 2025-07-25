@@ -6,7 +6,7 @@ import numpy as np
 
 z_desi_bao_eff = np.array([0.295,0.510, 0.706, 0.934, 1.321, 1.484, 2.330])  # this is the redshift we are using to calculate the observables. 
 dat_bao=np.loadtxt('desi_mean.txt')
-cov_bao=np.loadtxt("desi_cov.txt")
+cov_bao=np.loadtxt("desi_cov.txt") # this is the inverse of covariance matrix, although I named it cov_bao. 
 
 #these files can be found here in the BAO data folder. Download and run. 
 
