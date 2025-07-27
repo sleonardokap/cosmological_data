@@ -1,4 +1,11 @@
-Here I have given the BAO data (SDSS+DESI R1 and R2) and corresponding error and covariane matrix (for DESI R2). I have not given the covariance matrix matrix for DESI R1 and SDSS measurements. 
+#------ New Updates --------
+[1] Now I have updated the Planck likelihood. Use the planck code to fit your planck. It should be noted that this is not corresponding to the full Planck data. I have updated the code in which I have not yet given how to calculate the sound horizon distances at the recombination and photon baryon decoupling epoch. This advanced code will be released soon. 
+[2] The code is fully integrated with the dynamical system technique. So, If you want to model any scalar field, it can be easily doable without changing the whole code. Just write the equations and obtain the H_sol and dl_sol. 
+[3] So far I have not given any code for any other sampler except emcee. However, if you are using any complicated scalar field models, try to use dynesty or Polychord. They are advanced and efficient for obtaining higher dimensional parameter constraints. 
+[4] In the stay tuned for more advanced algorithm. 
+
+#--------- Other updates -----------
+Now I have added the BAO data (SDSS+DESI R1 and R2) and corresponding error and covariane matrix (for DESI R2). I have not given the covariance matrix matrix for DESI R1 and SDSS measurements. 
 I have shown how to calculate the several observables particularly: D_M, D_L, D_V and using that you can fit your cosmological model keeping r_d as a free parameter i.e., standard ruler at drag epoch (baryon photon decouple, z_d = 1059.90). 
 The planck estimated the length to be near 147 KPc. This length must be greater than the r_s standard ruler at recombination epoch z_* = 1090. It is important to note that both these quantities are different and measured at different time scalae. 
 
