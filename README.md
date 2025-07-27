@@ -2,6 +2,12 @@
 
 [2] For the analysis of Supernova Pantheon+ data sets, watch my tutorial here: https://youtu.be/u88Goguzm9M
 
+[3] I have updated the Planck likelihood. Check the folder BAO_DATA. 
+
+[4] I have also updated the BAO DESI RII data with the covariance matrix. Now you can easily implement your models. 
+
+[5] The code follows the dyanmical system framework which is a very powerful system to obtain stability of the system. So, now all the codes are highly optimized and efficient and uses a single framework which allows you to obtain all the constraint using a single framework. 
+
 ⚠️Note: While using the covariance matrix (after downloading from panthon+ website), you will probably get an error due to its shape. In order to resolve that you must follow the steps before reshaping. Open the file.cov in the vs code or any text editior, remove the first line written (1701) and save it. Now you can use the file for your calculation. 
 
 [3] For BAO analysis see the video for complete understanding: https://youtu.be/iRYb6wQVaO8
