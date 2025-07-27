@@ -1,5 +1,6 @@
 
 # copyright Saddam Leonardo Kap 
+#cite the relevant papers and mentioned the repo in your work if you use my algorithm 
 
 # Tutorial link: https://youtu.be/iRYb6wQVaO8
 
@@ -22,10 +23,13 @@ from getdist import plots, MCSamples
 import arviz as az
 
 import emcee
-import new_lcdm
+import BAO+LCDM_equation
 import Bao
 
 from datetime import datetime
+
+import compress_planck
+import new_desi_bao_R2
 
 
 
@@ -36,16 +40,16 @@ data_H = np.loadtxt("cc_data.txt")
 z_dataH = data_H[:, 0]
 
 
-
+data_pl = compress_planck.data_cmb # planck data. 
 
 ##############################
 
 
 
-N= len(z_dataH) + len(Bao.desz) + len(Bao.cmbbao_z) 
+N= len(z_dataH) + len(Bao.desz) + len(Bao.cmbbao_z) + len(data_pl)
 
-file_name= "lcdm_BAO+CC"
-label_fig="CC+BAO"
+file_name= "lcdm_BAO+CC+pla"
+label_fig="CC+BAO+PLANCK"
 
 # bao refers to SDSS BAO
 
@@ -66,9 +70,8 @@ def bic(log_liklihood,ndim,ndata):
 
 def liklihood(params):
 
-    om0 = params[0]
-    H0 = params[1]
-    rd = params[2]
+    om0, H0, rd, rs_val, orr0, obh = params
+    
     if not 0 < om0 < 0.7: 
         return -np.inf
     
@@ -77,9 +80,18 @@ def liklihood(params):
     
     if not 100 < rd< 300:
         return -np. inf
+
+    if not 100 < rs_val< 300:
+        return -np. inf
+
+    if not 8.6*1e-5<orr0<9.6*1e-5:
+        return -np.inf
+        
+    if not 0.00001 <obh <0.1:
+        return -np.inf
     
     
-    res =new_lcdm.log_prob(params)
+    res = BAO+LCDM_equation.log_prob(params)
     
     return res
 
@@ -92,24 +104,25 @@ print("{0} CPUs not all in used.".format(ncpu))
 
 print(f"Now we are doing {file_name} analysis with LambdaCDm:", N)
 
+name = ['Omega_m', 'H0', 'rd', 'rs', 'Omega_r', 'Obh']
+labels1 = [r'\Omega_{m}', r'H_0', r'r_d', r'r_s', r'\Omega_r', r'\Omega_{\rm b}h^2']
 
-nwalker = 30
-ndim = 3
+nwalker = 60
+ndim = len(name)
 niter = 20000
 
-p0 = np.random.uniform(low=[0.0, 40.,100], high=[0.7, 100,300], size=(nwalker, ndim))
+p0 = np.random.uniform(low=[0.0, 40.,100, 100, 8.1e-5, 0.00001], high=[0.7, 100,300, 300, 9.6e-5,0.1], size=(nwalker, ndim))
 
-with Pool(processes=10) as pool:
+with Pool(processes=10) as pool:  #set the processes according to the number of cores you have. 
     sampler = emcee.EnsembleSampler(nwalker, ndim, liklihood,pool=pool,live_dangerously=None)
     sampler.run_mcmc(p0,niter,progress=True)
 
-dis=1500
+dis=2000
 thi=10
 
 chains = sampler.get_chain(flat=True,discard=dis, thin=thi)
 
-name = ['Omega_m', 'H0', 'rd']
-labels1 = [r'\Omega_{m}', r'H_0', r'r_d']
+
 
 sample2 = MCSamples(samples=chains,names=name, labels=labels1)
 
