@@ -6,10 +6,9 @@
 
 # Tutorial link: https://youtu.be/iRYb6wQVaO8
 
-import numpy as np
-
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
+import numpy as np
 from scipy.interpolate import interp1d
 
 from scipy.integrate import solve_ivp
@@ -38,7 +37,7 @@ H_inv = la.inv(H_diag)
 
 
 # Pantheon data for mu
-
+# in this data set I am not using any filter and applied no corrections. to know more about filter and corrections regarding it, follow my paper: https://arxiv.org/pdf/2506.11755 , here I have given the link how to apply the redshift correction while computing the distance modulus.  
 data_sn=np.loadtxt("pantheon_data_M.txt")
 z_data_sn=data_sn[:,0]
 mu_sn=data_sn[:,1]
@@ -58,27 +57,31 @@ def wd(z,  params):
 
 
 
+# now the equations are written in the autonomous equations framework, where the derivative takes place 
+# with respect to N, x'(N) = eqx, for instruction follow the paper on k-essence: https://arxiv.org/abs/2406.07179
+def equation(t, variable, params):
 
-def equation( z, variable, params):
-    
-    
-    
-    od, omm, H, dl = variable[0], variable[1], variable[2]
+    omm, od, H, dl = variable
 
-    om0, H0 = params
+    H0, om0 = params
 
     orr = 1-  od - omm
-
+        
     wdd = -1
 
-    dotH = (-3/2 *( 4/3 * orr +  omm + (1+  wdd) * od ) )
-    
-    eqd = 1 / (1 + z) * (3 * od *(1 + (-1)) + dotH * od)
-    eqm = 1/(1+z) * (3 * omm + 2 * omm * dotH)
-    
-    eqH = (3 / (2 * (1 + z))) * H * ( 4/3 * orr +  omm + (1+  wdd) * od )  # check these equations again. 
+    dotH = (-3/2 *( 4/3 * orr + omm + (1+  wdd) * od ))
 
-    eqdl = 1/(1+z)*dl + (1/H ) * 2.99792458e5 * (1+z)
+       
+        
+    eqd = -1 * (3 * od *(1 + wdd) + 2 * dotH * od)
+
+        
+
+    eqm = - 3 * omm - 2 * omm * dotH 
+        
+    eqH =  H * dotH
+        
+    eqdl = - dl - (1 / H) * 2.99792458e5 * np.exp(- 2* t)
     
     return np.array([eqd, eqm, eqH, eqdl])
 
@@ -97,21 +100,23 @@ def ode_sol(params):
   
 
     
-    tmax = 8000
+    tmax = 6000
 
 
-    sol = solve_ivp(lambda t, y:equation(t,y,param), [0, 1200], [od0, om0, H0, 0], t_eval=np.linspace(0, 1200, tmax), rtol=1e-2, atol=1e-2, method='BDF')
+    sol = solve_ivp(lambda t, y:equation(t,y,param), [0, -10], [od0, om0, H0, 0], t_eval=np.linspace(0, -10, tmax), rtol=1e-2, atol=1e-2, method='BDF')
 
 
     t_sol = sol.t
    
     odsol, omsol, H_sol, dl_sol = sol.y
+
+    zsol = np.exp(-t_sol)- 1  # Here, I am constructing the redshift from N using N= - ln(1+z). This is one of the greatest way to handle things efficiently. It is superior technique than solving the differential equation with respect to redshift. It boosts the speed 10x then redshift. 
         
     
 
-    H_val = interp1d(t_sol, H_sol, kind='cubic')
+    H_val = interp1d(zsol, H_sol, kind='cubic')
 
-    dl_val=interp1d(t_sol, dl_sol, kind='cubic')
+    dl_val=interp1d(zsol, dl_sol, kind='cubic')
 
     res_hubble = np.zeros(len(z_dataH))
 
@@ -133,9 +138,6 @@ def ode_sol(params):
         res = -0.5 * (res_sn.T @ inverse_covar @ res_sn)
 
         return res    
-
-    
-
 
 
     # BAO calculation 
@@ -160,7 +162,7 @@ def log_prob( params):
     
     res = ode_sol(params)
 
-    if np.any(np.isinf(res)):
+    if np.any(np.isinf(res)) and np.any(np.isnan(res)):
 
         return -np.inf
     
