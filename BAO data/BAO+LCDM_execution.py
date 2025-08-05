@@ -46,7 +46,7 @@ data_pl = compress_planck.data_cmb # planck data.
 
 
 
-N= len(z_dataH) + len(Bao.desz) + len(Bao.cmbbao_z) + len(data_pl)
+N= len(z_dataH) + len(new_desi_bao_R2.desz) + len(Bao.cmbbao_z) + len(data_pl)
 
 file_name= "lcdm_BAO+CC+pla"
 label_fig="CC+BAO+PLANCK"
@@ -185,6 +185,7 @@ g.settings.colorbar_axes_fontsize = 10  # Adjust colorbar fontsize
 g.triangle_plot(sample2, name, filled=True, legend_labels=[f'{label_fig}'],legend_loc='upper right', contour_colors=['orange'],title_limit=1)  
 
 g.export(f'figure/{file_name}.pdf')
+
 
 
 
