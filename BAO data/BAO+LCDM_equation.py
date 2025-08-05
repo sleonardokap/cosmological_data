@@ -18,6 +18,8 @@ import scipy.linalg as la
 
 import Bao
 
+import new_desi_bao_R2
+
 import compress_planck
 
 ##############
@@ -144,9 +146,9 @@ def ode_sol(params):
 
     chi_bao_cmb = Bao.cmb_bao(dl_val, H_val, params=rd)
 
-    chi_bao_desi = Bao.desi_bao(dl_val, H_val, params=rd)
+    chi_bao_desi = new_desi_bao_R2.desi_bao(dl_val, H_val, params=rd)
 
-    chi_planck = compress_planck.planck_chi(dl_val, H_val, cmb_params, rs_val, zs = 1089.90)
+    chi_planck = compress_planck.planck_chi(dl_val, H_val, cmb_params, rs_val, 1089.90)
 
     # you can either compute zs using the paper mentioned in the planck likelihood
     
@@ -169,6 +171,7 @@ def log_prob( params):
     
     
     return  res
+
 
 
 
