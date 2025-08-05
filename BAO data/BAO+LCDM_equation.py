@@ -61,9 +61,9 @@ def wd(z,  params):
 # with respect to N, x'(N) = eqx, for instruction follow the paper on k-essence: https://arxiv.org/abs/2406.07179
 def equation(t, variable, params):
 
-    omm, od, H, dl = variable
+    od, omm, H, dl = variable
 
-    H0, om0 = params
+    om0, H0 = params
 
     orr = 1-  od - omm
         
@@ -169,6 +169,7 @@ def log_prob( params):
     
     
     return  res
+
 
 
 
