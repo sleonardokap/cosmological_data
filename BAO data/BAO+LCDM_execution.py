@@ -109,12 +109,18 @@ labels1 = [r'\Omega_{m}', r'H_0', r'r_d', r'r_s', r'\Omega_r', r'\Omega_{\rm b}h
 
 nwalker = 60
 ndim = len(name)
-niter = 20000
+niter = 100000
 
 p0 = np.random.uniform(low=[0.0, 40.,100, 100, 8.1e-5, 0.00001], high=[0.7, 100,300, 300, 9.6e-5,0.1], size=(nwalker, ndim))
 
+move = [
+        (emcee.moves.StretchMove(a=2.0),0.30),
+        (emcee.moves.DEMove(), 0.50),
+        (emcee.moves.DESnookerMove(), 0.20)
+        # (emcee.moves.KDEMove(bw_method=None), 0.30)
+    ]
 with Pool(processes=10) as pool:  #set the processes according to the number of cores you have. 
-    sampler = emcee.EnsembleSampler(nwalker, ndim, liklihood,pool=pool,live_dangerously=None)
+    sampler = emcee.EnsembleSampler(nwalker, ndim, liklihood,pool=pool,live_dangerously=None,  moves=move)
     sampler.run_mcmc(p0,niter,progress=True)
 
 dis=2000
@@ -179,5 +185,6 @@ g.settings.colorbar_axes_fontsize = 10  # Adjust colorbar fontsize
 g.triangle_plot(sample2, name, filled=True, legend_labels=[f'{label_fig}'],legend_loc='upper right', contour_colors=['orange'],title_limit=1)  
 
 g.export(f'figure/{file_name}.pdf')
+
 
 
