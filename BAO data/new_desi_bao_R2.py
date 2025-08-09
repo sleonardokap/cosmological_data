@@ -2,8 +2,11 @@
 # copyright Saddam Leonardo Kap. 
 # If you are using my any form of algorithm, don't forget to mention my github repo and cite my published articles.  
 
+
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
 import numpy as np
-from numpy.linag import inv
+from numpy.linalg import inv, pinv
 
 z_desi_bao_eff = np.array([0.295,0.510, 0.706, 0.934, 1.321, 1.484, 2.330])  # this is the redshift we are using to calculate the observables. 
 dat_bao=np.loadtxt('desi_mean.txt')
