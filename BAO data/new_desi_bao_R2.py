@@ -3,10 +3,12 @@
 # If you are using my any form of algorithm, don't forget to mention my github repo and cite my published articles.  
 
 import numpy as np
+from numpy.linag import inv
 
 z_desi_bao_eff = np.array([0.295,0.510, 0.706, 0.934, 1.321, 1.484, 2.330])  # this is the redshift we are using to calculate the observables. 
 dat_bao=np.loadtxt('desi_mean.txt')
-cov_bao=np.loadtxt("desi_cov.txt") # this is the inverse of covariance matrix, although I named it cov_bao. 
+cov_bao=np.loadtxt("desi_cov.txt") # this is covariance matrix. 
+inv_cov = inv(cov_bao) #Here, we are taking the inverse of it. 
 
 #these files can be found here in the BAO data folder. Download and run. 
 
@@ -43,7 +45,7 @@ def desi_bao(dl_val, H_val, rd_val):
 
     res = dat_bao - val
 
-    chi_bao = -0.5* (res @ cov_bao @ res )    
+    chi_bao = -0.5* (res @ inv_cov @ res )    
 
 
     return chi_bao
