@@ -1,0 +1,168 @@
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import integrate
+from scipy.integrate import solve_ivp
+from scipy.interpolate import interp1d 
+from matplotlib import rc
+import matplotlib
+matplotlib.use('Agg')
+plt.rcParams.update({'font.size': 12})
+from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
+from getdist import plots, MCSamples
+import arviz as az
+import dynesty
+
+
+import Bao
+from datetime import datetime
+
+import new_desi_bao
+
+import BAO_LCDM_equation
+import pypolychord
+from pypolychord.settings import PolyChordSettings
+from pypolychord.priors import UniformPrior
+
+from scipy.stats import norm
+
+import compress_planck
+
+try:
+    from mpi4py import MPI
+
+except ImportError:
+    pass
+
+import new_desi_bao
+# To run:  mpirun -np 70 python -u polychord_run.py
+
+# nohup mpirun -np 70 python -u polychord_run.py > output.log 2>&1 &
+
+##############################
+data=np.loadtxt("data/pantheon_data_M.txt")
+z_data_sn=data[:,0]
+
+data_H = np.loadtxt("cc_data.txt")
+z_dataH = data_H[:, 0]
+
+
+
+data_pl = compress_planck.data_cmb
+
+rank = MPI.COMM_WORLD.Get_rank()
+
+
+file_name = 'lcdm_poly_cc+pla+bao'
+label_fig = "CC+PLANCK"
+N= len(z_dataH) + len(new_desi_bao.z_desi_bao_eff) +  len(data_pl)
+
+
+def likelihood(theta):
+    """
+    PolyChord likelihood function.
+    theta: array of parameters [om0, H0, w0, rd]
+    Returns: (log_likelihood, [derived_parameters])
+    """
+    om0, H0, rd, rs_val, orr0, obh =  theta
+    params = [om0, H0, rd, rs_val, orr0, obh]
+    
+    
+    res = BAO_LCDM_equation.log_prob(params)
+    return res, []  # No derived parameters in this case
+
+def prior(hypercube):
+    """
+    PolyChord prior function.
+    Transforms unit hypercube to physical parameter space.
+    """
+    theta = np.zeros(len(hypercube))
+    # Define uniform priors matching your bounds
+    theta[0] = UniformPrior(0.0, 0.7)(hypercube[0])  # om0
+    theta[1] = UniformPrior(30.0, 100.0)(hypercube[1])  # H0
+    theta[2] = UniformPrior(100, 300)(hypercube[2])  # rd
+    theta[3] = UniformPrior(100, 300)(hypercube[3])  #rs
+    theta[4] = norm.ppf(hypercube[4], loc = 9.1e-5, scale = 1e-6)  # orr0 this is etransition redshift. 
+    
+    
+
+    theta[5] = UniformPrior(0.0001, 0.1)(hypercube[5])  
+
+    return theta
+
+def aic(log_likelihood, ndim):
+    return -2 * log_likelihood + 2 * ndim
+
+def bic(log_likelihood, ndim, ndata):
+    return -2 * log_likelihood + ndim * np.log(ndata)
+
+
+nderived = 0  # No derived parameters
+nlive = 350  # Number of live points
+
+name = ['Omega_m', 'H0', 'rd', 'rs', 'Omega_r', 'Obh']
+labels1 = [r'\Omega_{m}', r'H_0', r'r_d', r'r_s', r'\Omega_r', r'\Omega_{\rm b}h^2']
+
+ndim = len(name)
+
+ncpu = cpu_count()
+
+print("{0} CPUs not all in used.".format(ncpu))
+
+
+
+print(f"Now we are doing {file_name} analysis with LambdaCDm:", N)
+
+# PolyChord settings
+settings = PolyChordSettings(ndim, nderived)
+settings.file_root = file_name
+settings.base_dir = 'chains_new/'  #create a new directory.
+settings.nlive = nlive
+settings.num_repeats = ndim * 5  # Recommended for robust sampling
+settings.feedback = 2  # Verbosity level  (it could be 0 to 3)
+settings.do_clustering = True  # Enable clustering for multimodal posteriors
+settings.read_resume = False  # Start fresh run
+
+
+def dumper(live, dead, logweights, logZ, logZerr):
+    print("Last dead point:", dead[-1])
+
+# Run PolyChord
+
+
+
+output = pypolychord.run_polychord(likelihood, ndim, nderived, settings, prior, dumper=dumper)
+
+print(f"Here is the result for {file_name} on:", datetime.now())
+
+print("PolyChord run completed.")
+
+
+# if rank == 0:
+#     output = pypolychord.PolyChordOutput(settings.base_dir, settings.file_root)
+#     paramnames = [(name[i], labels1[i]) for i in range(ndim)]
+#     output.make_paramnames_files(paramnames)
+
+if rank == 0:
+
+    # paramnames = [('p%i' % i, r'\theta_%i' % i) for i in range(ndim)]
+    paramnames = name
+    # paramnames += [('r*', 'r')]
+    output.make_paramnames_files(paramnames)
+
+    import getdist.plots
+    
+    posterior = output.posterior
+    g = getdist.plots.getSubplotPlotter()
+    g.triangle_plot(posterior, filled=True, title_limit=1, legend_labels=[f'{label_fig}'],legend_loc='upper right', contour_colors=['orange'])
+    
+    
+    g.export(f'figure/{file_name}.pdf')
+
+if rank==0:
+            
+    print("All computations are now finished.")
+
+#  mpirun -np 70 python -u polychord_run.py
