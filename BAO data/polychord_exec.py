@@ -165,4 +165,6 @@ if rank==0:
             
     print("All computations are now finished.")
 
+# mpirun -np 11 python -u polychord_exec.py  use this command to run the file in the terminal. It will use multiproccessing. 
+
 #  mpirun -np 70 python -u polychord_run.py
