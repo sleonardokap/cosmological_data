@@ -13,15 +13,13 @@ from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 from getdist import plots, MCSamples
 import arviz as az
-import dynesty
-
 
 import Bao
 from datetime import datetime
 
 import new_desi_bao
 
-import BAO_LCDM_equation
+import BAO_LCDM_equation  #File name, where you have put the equations, change accordingly. 
 import pypolychord
 from pypolychord.settings import PolyChordSettings
 from pypolychord.priors import UniformPrior
@@ -37,9 +35,8 @@ except ImportError:
     pass
 
 import new_desi_bao
-# To run:  mpirun -np 70 python -u polychord_run.py
 
-# nohup mpirun -np 70 python -u polychord_run.py > output.log 2>&1 &
+# To run the program in the terminal use the following command:  mpirun -np 11 python -u polychord_exec.py
 
 ##############################
 data=np.loadtxt("data/pantheon_data_M.txt")
@@ -53,6 +50,8 @@ z_dataH = data_H[:, 0]
 data_pl = compress_planck.data_cmb
 
 rank = MPI.COMM_WORLD.Get_rank()
+
+print("The rank of the cpu is ", rank)
 
 
 file_name = 'lcdm_poly_cc+pla+bao'
@@ -140,16 +139,11 @@ print(f"Here is the result for {file_name} on:", datetime.now())
 print("PolyChord run completed.")
 
 
-# if rank == 0:
-#     output = pypolychord.PolyChordOutput(settings.base_dir, settings.file_root)
-#     paramnames = [(name[i], labels1[i]) for i in range(ndim)]
-#     output.make_paramnames_files(paramnames)
-
 if rank == 0:
 
-    # paramnames = [('p%i' % i, r'\theta_%i' % i) for i in range(ndim)]
+    # paramnames = [('p%i' % i, r'\theta_%i' % i) for i in range(ndim)]  #you can also use this. 
     paramnames = name
-    # paramnames += [('r*', 'r')]
+    
     output.make_paramnames_files(paramnames)
 
     import getdist.plots
@@ -167,4 +161,4 @@ if rank==0:
 
 # mpirun -np 11 python -u polychord_exec.py  use this command to run the file in the terminal. It will use multiproccessing. 
 
-#  mpirun -np 70 python -u polychord_run.py
+
