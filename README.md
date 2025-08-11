@@ -1,4 +1,10 @@
-# ------- New Updates ----------
+# ------ New Updates --------
+
+[1] Added the Polychord sampler, which is way advanced than emcee sampler to obtain constraint on the higher dimensional paramter space.
+
+[2] Added a Jupyter file for AIC and BIC calculation which will read the chains_new directory I have created. 
+
+# ------ Older Updates --------
 
 [1] Now I have updated the Planck likelihood. You can find these codes in BAO data directory. Use the planck code to fit your planck. It should be noted that this is not corresponding to the full Planck data. I have updated the code in which I have not yet given how to calculate the sound horizon distances at the recombination and photon baryon decoupling epoch. This advanced code will be released soon. 
 [2] The code is fully integrated with the dynamical system technique. So, If you want to model any scalar field, it can be easily doable without changing the whole code. Just write the equations and obtain the H_sol and dl_sol. 
