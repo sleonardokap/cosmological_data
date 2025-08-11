@@ -1,3 +1,4 @@
+# Copyright (c) Saddam Leonardo Kap 2025. If you use any of the computing program for you research using my algorithm, kindly cite my papers given in the readme file and mention the GitHub repo file in the manuscript. These codes are for purely research purpose. Do not use it for commercial purpose. You can use these algorithm and codes to teach students and give a proper credit to the originator. 
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
 import numpy as np
@@ -160,5 +161,6 @@ if rank==0:
     print("All computations are now finished.")
 
 # mpirun -np 11 python -u polychord_exec.py  use this command to run the file in the terminal. It will use multiproccessing. 
+
 
 
