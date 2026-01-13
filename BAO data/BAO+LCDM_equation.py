@@ -71,7 +71,7 @@ def equation(t, variable, params):
         
     wdd = -1
 
-    dotH = (-3/2 *( 4/3 * orr + omm + (1+  wdd) * od ))
+    dotH = (-3/2 *( 1/3 * orr  +   wdd * od + 1 ))
 
        
         
@@ -102,10 +102,10 @@ def ode_sol(params):
   
 
     
-    tmax = 6000
+    tmax = 9000
 
 
-    sol = solve_ivp(lambda t, y:equation(t,y,param), [0, -10], [od0, om0, H0, 0], t_eval=np.linspace(0, -10, tmax), rtol=1e-2, atol=1e-2, method='BDF')
+    sol = solve_ivp(lambda t, y:equation(t,y,param), [0, -15], [od0, om0, H0, 0], t_eval=np.linspace(0, -15, tmax), rtol=1e-3, atol=1e-2, method='BDF')
 
 
     t_sol = sol.t
@@ -171,6 +171,7 @@ def log_prob( params):
     
     
     return  res
+
 
 
 
