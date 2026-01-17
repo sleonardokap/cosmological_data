@@ -4,6 +4,8 @@
 
 # Tutorial link: https://youtu.be/iRYb6wQVaO8
 
+# IF you are using any algorithm or piece of code, kindly mention my code and cite my articles: https://arxiv.org/abs/2509.09202 and reference therein. You can also find many references of mine in the Readme.md file. Let me know if you find any difficulty or error. 
+
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
 import numpy as np
@@ -70,9 +72,9 @@ def bic(log_liklihood,ndim,ndata):
 
 def liklihood(params):
 
-    om0, H0, rd, rs_val, orr0, obh = params
+    od0, H0, rd, rs_val, obh, Neff = params
     
-    if not 0 < om0 < 0.7: 
+    if not 0.1 < od0 < 1: 
         return -np.inf
     
     if not 30 < H0 < 100: 
@@ -84,10 +86,11 @@ def liklihood(params):
     if not 100 < rs_val< 300:
         return -np. inf
 
-    if not 8.6*1e-5<orr0<9.6*1e-5:
-        return -np.inf
-        
+            
     if not 0.00001 <obh <0.1:
+        return -np.inf
+
+    if not 1.9 <Neff<4.0:
         return -np.inf
     
     
@@ -104,14 +107,14 @@ print("{0} CPUs not all in used.".format(ncpu))
 
 print(f"Now we are doing {file_name} analysis with LambdaCDm:", N)
 
-name = ['Omega_m', 'H0', 'rd', 'rs', 'Omega_r', 'Obh']
-labels1 = [r'\Omega_{m}', r'H_0', r'r_d', r'r_s', r'\Omega_r', r'\Omega_{\rm b}h^2']
+name = ['Omega_d', 'H0', 'rd', 'rs', 'Obh', 'Neff']
+labels1 = [r'\Omega_{\Lambda}', r'H_0', r'r_d', r'r_s', r'\Omega_{\rm b}h^2', r'N_{\rm eff}']
 
 nwalker = 60
 ndim = len(name)
-niter = 100000
+niter = 400000
 
-p0 = np.random.uniform(low=[0.0, 40.,100, 100, 8.1e-5, 0.00001], high=[0.7, 100,300, 300, 9.6e-5,0.1], size=(nwalker, ndim))
+p0 = np.random.uniform(low=[0.1, 40.,100, 100, 0.00001, 1.9], high=[1, 100,300, 300,0.1, 4.0], size=(nwalker, ndim))
 
 move = [
         (emcee.moves.StretchMove(a=2.0),0.30),
@@ -123,7 +126,7 @@ with Pool(processes=10) as pool:  #set the processes according to the number of 
     sampler = emcee.EnsembleSampler(nwalker, ndim, liklihood,pool=pool,live_dangerously=None,  moves=move)
     sampler.run_mcmc(p0,niter,progress=True)
 
-dis=2000
+dis=4000
 thi=10
 
 chains = sampler.get_chain(flat=True,discard=dis, thin=thi)
@@ -185,6 +188,7 @@ g.settings.colorbar_axes_fontsize = 10  # Adjust colorbar fontsize
 g.triangle_plot(sample2, name, filled=True, legend_labels=[f'{label_fig}'],legend_loc='upper right', contour_colors=['orange'],title_limit=1)  
 
 g.export(f'figure/{file_name}.pdf')
+
 
 
 
