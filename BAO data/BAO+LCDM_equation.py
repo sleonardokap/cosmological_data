@@ -59,14 +59,6 @@ cov_inv_sn = inv(cov_data_pan)  # make sure to use unique name, and this has to 
 
 
 
-##########################
-
-
-def wd(z,  params):
-    eos = -1
-    return eos
-
-
 
 # now the equations are written in the autonomous equations framework, where the derivative takes place 
 # with respect to N, x'(N) = eqx, for instruction follow the paper on k-essence: https://arxiv.org/abs/2406.07179
@@ -110,6 +102,10 @@ def equation(t, variable, params):
 
 def ode_sol(params):
     od0, H0, rd, rs_val, obh, Neff = params
+
+    # Neff = 3.046
+
+    # you may fix Neff= 3.046 which is good if you only use cmb_data, since this data can't constraint N_eff, hence your H_0 won't be constrained. I will provide more generalize data later where you can get constraint on N_eff. So, my advice will be if you are not using desi Bao or BBN data you may fix Neff, other wise it won't produce good result. Once you will fix it you will get H0 = 66-68 km/s/Mpc. Once you fix Neff, kindly update your polychord or emcee sample accordingly. 
 
     hh=(H0/100)
 
@@ -251,6 +247,7 @@ def log_prob( params):
 
 
 # To sample you can use emcee or polychord. Both sampling can be found in the folder. However make sure to see the parameter list. You may need to make some changes into it. 
+
 
 
 
