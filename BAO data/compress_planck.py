@@ -7,39 +7,47 @@ import numpy as np
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning, message="invalid value encountered in divide")
 
-data_cmb= np.array([1.7502, 301.471, 0.02236])
+# This data set has been taken from new paper:
+# https://www.aanda.org/articles/aa/pdf/2020/07/aa36720-19.pdf  
+# to understand the likelihood please follow this paper, and if you are using my code or any algorithm,
+# please try to mention it in the paper and cite my work mentioned in the Readme.md. 
 
-data_cmb_sigma = np.array([0.0046,0.090,0.00015])
+data_cmb= np.array([2.237,1.0411,1.74998]) 
 
-inv_cmb = np.array([[94392.3971,-1360.4913,1664517.2916], 
-                    [-1360.4913,161.4349,3671.6180],
-                    [1664517.2916, 3671.6180, 79719182.5162]])
+data_cmb_sigma = np.array([0.015,0.00031,0.004])
+
+inv_cmb = np.array([[ 7.40859769e+03, -2.28256250e+04,  1.66890785e+04],
+ [-2.28256250e+04,  1.32689897e+07,  4.19113942e+05],
+ [ 1.66890785e+04,  4.19113942e+05,  1.16869360e+05]])
 
 # Now you have to call this file inside the BAO+LCDM_execution.py
 
-def planck_chi(dl_val,H_val,params, rs_val, zs_val):   
-    
+
+class planck_cmb_likelihood:
+
+  def planck_chi(self, dl_val,H_val, params, rs_val, zs_val):  
+
     om0, H0, obh = params  # this is a reduced params which is different from the global params. 
 
-    calc_obh = obh
+    calc_obh = 100* obh
     
     rs= rs_val  # this you can either choose to vary or calculate it. 
 
     zs= zs_val
     # 
 
-    da =  dl_val(zs)/(1+zs)**2
+    da =  dl_val(zs)/(1+zs)
 
-    la=  (1+zs)* np.pi * da/rs  #accoustic length
+    theta = rs/da
 
-    Rr = ((1+zs)* da* H0* (om0)**(1/2)) /2.99792458e5  #shift parameter 
+    Rr = (da* H0* (om0)**(1/2))/2.99792458e5  #shift parameter 
     
     shift_val = Rr 
 
-    la_val = la  
+    theta_val = 100* theta
     
 
-    eval_val = np.array([shift_val, la_val, calc_obh])    
+    eval_val = np.array([calc_obh, theta_val, shift_val])  
 
     res9 = eval_val - data_cmb
 
