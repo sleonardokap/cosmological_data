@@ -150,7 +150,7 @@ def ode_sol(params):
     yi = np.array([od0, om0, ob0, og0, or0, 1, 0])  # this is initialization of the initial condition for all the differential equation. 
 
 
-    sol = solve_ivp(lambda t, y: cpleq.lcdm_equation(t, y, param),
+    sol = solve_ivp(lambda t, y: equation(t, y, param),
             [0, -20], yi, t_eval=np.linspace(0.0,-20,tmax), method='BDF', rtol = 1e-4, atol = 1e-3)
 
 
@@ -247,6 +247,7 @@ def log_prob( params):
 
 
 # To sample you can use emcee or polychord. Both sampling can be found in the folder. However make sure to see the parameter list. You may need to make some changes into it. 
+
 
 
 
