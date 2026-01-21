@@ -13,7 +13,7 @@ from scipy.interpolate import interp1d
 
 from scipy.integrate import solve_ivp
 
-
+from numpy.linalg import inv
 import scipy.linalg as la
 
 import Bao
@@ -50,11 +50,11 @@ cov_mat = cov_data.reshape(1701,1701)
 inverse_covar = la.inv(cov_mat)
 
 # This is pantheon+ with column m_B, and apply filter. z>0.01 with cephids. The total number of sample becomes 1640 or something around that. However, you can still use 1701 data points, however, your result will not match with the original paper. This is not wrong, this mismatch is there due to the systematic error found in the nearby redshift sample. 
-data_sn_pan = np.loadtxt("pantheon_data_mb.txt") # you can change the name of your file. 
+data_sn_pan = np.loadtxt("data_pantheon_cephids.txt") # you can change the name of your file. 
 z_cmb_pan = data_sn_pan[:,0]
 z_hel_pan = data_sn_pan[:,1]
 mb_sn_pan = data_sn_pan[:, 2]  # this is column corresponding to m_B
-cov_data_pan = np.loadtxt("pantheon_data_mb_cov.txt")
+cov_data_pan = np.loadtxt("covmat_pan_cephids.txt")
 cov_inv_sn = inv(cov_data_pan)  # make sure to use unique name, and this has to match with the likelihood def. 
 
 
@@ -165,7 +165,7 @@ def ode_sol(params):
     dlsol =  dlh0_sol/H0  # This is in km/s/Mpc unit.  # this is normal D_L.
     
 
-    H_val = interp1d(zz, hh_sol, kind='cubic')
+    H_val = interp1d(zz, hhsol, kind='cubic')
 
     dl_val=interp1d(zz, dlsol, kind='cubic')
 
@@ -200,7 +200,7 @@ def ode_sol(params):
                                     dl_val(redshift)/(1+redshift)**2) + 25
 
         res_sn = mb_sn_pan - mu_values_sn
-        one_vec = np.ones(len(mb_sn))
+        one_vec = np.ones(len(mb_sn_pan))
 
         aa = res_sn @ cov_inv_sn @ res_sn
         bb = one_vec @ cov_inv_sn @ res_sn
@@ -212,18 +212,18 @@ def ode_sol(params):
 
     # BAO calculation 
 
-    chi_bao_cmb = Bao.cmb_bao(dl_val, H_val, params=rd)
+    chi_bao_cmb = Bao.cmb_bao(dl_val, H_val, rd) 
 
-    chi_sn_pantheon = chi_sn_mb_pantheon(dl_val, z_cmb_pan, z_cmb_hel)
+    chi_sn_pantheon = chi_sn_mb_pantheon(dl_val, z_cmb_pan, z_hel_pan)
 
-    chi_bao_desi = new_desi_bao_R2.desi_bao(dl_val, H_val, params=rd)
+    chi_bao_desi = new_desi_bao_R2.desi_bao(dl_val, H_val, rd)
 
     chi_planck = planck_like.planck_chi(dl_val, H_val, cmb_params, rs_val, 1089.90)  # New likelihood has been updated for this.
 
     # you can either compute zs using the paper mentioned in the planck likelihood
     
 
-    chi_tot =  chi_hubble + chi_bao_desi + chi_bao_cmb + chi_planck
+    chi_tot =   chi_planck
 
     if np.any(np.isinf(chi_tot)):
         return -np.inf
