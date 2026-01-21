@@ -13,7 +13,7 @@ plt.rcParams.update({'font.size': 12})
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 from getdist import plots, MCSamples
-import arviz as az
+# import arviz as az
 
 import Bao
 from datetime import datetime
@@ -160,6 +160,7 @@ if rank==0:
     print("All computations are now finished.")
 
 # mpirun -np 11 python -u polychord_exec.py  use this command to run the file in the terminal. It will use multiproccessing. 
+
 
 
 
