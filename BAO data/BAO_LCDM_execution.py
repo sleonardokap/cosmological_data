@@ -25,7 +25,7 @@ from getdist import plots, MCSamples
 import arviz as az
 
 import emcee
-import BAO+LCDM_equation
+import BAO_LCDM_equation
 import Bao
 
 from datetime import datetime
@@ -94,7 +94,7 @@ def liklihood(params):
         return -np.inf
     
     
-    res = BAO+LCDM_equation.log_prob(params)
+    res = BAO_LCDM_equation.log_prob(params)
     
     return res
 
@@ -188,6 +188,7 @@ g.settings.colorbar_axes_fontsize = 10  # Adjust colorbar fontsize
 g.triangle_plot(sample2, name, filled=True, legend_labels=[f'{label_fig}'],legend_loc='upper right', contour_colors=['orange'],title_limit=1)  
 
 g.export(f'figure/{file_name}.pdf')
+
 
 
 
