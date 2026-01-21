@@ -43,7 +43,7 @@ def desi_bao(dl_val, H_val, rd_val):
     dh23 = 2.99792458e5/(rd* H_val(2.33000000))
 
     
-    val = np.array([dv0, dm05, dh05, dm07,dh07, dm09, dh09, dm13, dh13, dm14, dh14, dh23,dh23])
+    val = np.array([dv0, dm05, dh05, dm07,dh07, dm09, dh09, dm13, dh13, dm14, dh14, dh23])
 
 
     res = dat_bao - val
