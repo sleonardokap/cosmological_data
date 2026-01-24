@@ -55,8 +55,8 @@ rank = MPI.COMM_WORLD.Get_rank()
 print("The rank of the cpu is ", rank)
 
 
-file_name = 'lcdm_poly_cc+pla+bao'
-label_fig = "CC+PLANCK"
+file_name = 'lcdm_poly_pla'
+label_fig = "PLANCK"
 N= len(z_dataH) + len(new_desi_bao.z_desi_bao_eff) +  len(data_pl)
 
 
@@ -66,8 +66,11 @@ def likelihood(theta):
     theta: array of parameters [om0, H0, w0, rd]
     Returns: (log_likelihood, [derived_parameters])
     """
-    od0, H0, rd, rs_val, obh, Neff =  theta
-    params = [od0, H0, rd, rs_val, obh, Neff]
+    # od0, H0, obh, Neff =  theta
+    # params = [od0, H0, obh, Neff]
+
+    od0, H0, obh =  theta
+    params = [od0, H0, obh]
     
     
     res = BAO_LCDM_equation.log_prob(params)
@@ -82,12 +85,12 @@ def prior(hypercube):
     # Define uniform priors matching your bounds
     theta[0] = UniformPrior(0.1, 1)(hypercube[0])  # od0
     theta[1] = UniformPrior(30.0, 100.0)(hypercube[1])  # H0
-    theta[2] = UniformPrior(100, 300)(hypercube[2])  # rd
-    theta[3] = UniformPrior(100, 300)(hypercube[3])  #rs
+    # theta[2] = UniformPrior(100, 300)(hypercube[2])  # rd
+    # theta[3] = UniformPrior(100, 300)(hypercube[3])  #rs
 
-    theta[4] = UniformPrior(0.0001, 0.1)(hypercube[4]) # obh
+    theta[2] = UniformPrior(0.0001, 0.1)(hypercube[2]) # obh
 
-    theta[5] = UniformPrior(1.8, 4.0)(hypercube[5])  # Neff     
+    # theta[5] = UniformPrior(1.8, 4.0)(hypercube[5])  # Neff     
 
     return theta
 
@@ -101,8 +104,8 @@ def bic(log_likelihood, ndim, ndata):
 nderived = 0  # No derived parameters
 nlive = 500  # Number of live points
 
-name = ['Od', 'H0', 'rd', 'rs', 'Obh', 'Neff']
-labels1 = [r'\Omega_{\Lambda}', r'H_0', r'r_d', r'r_s', r'\Omega_{\rm b 0}h^2', 'N_{\rm eff}']
+name = ['Od', 'H0', 'Obh']
+labels1 = [r'\Omega_{\Lambda}', r'H_0',  r'\Omega_{\rm b 0}h^2']
 
 ndim = len(name)
 
@@ -160,6 +163,7 @@ if rank==0:
     print("All computations are now finished.")
 
 # mpirun -np 11 python -u polychord_exec.py  use this command to run the file in the terminal. It will use multiproccessing. 
+
 
 
 
