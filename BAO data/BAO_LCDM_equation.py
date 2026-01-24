@@ -9,13 +9,16 @@
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, CubicSpline
 
-from scipy.integrate import solve_ivp
+from scipy.integrate import solve_ivp, simpson
 
 from numpy.linalg import inv
 import scipy.linalg as la
 
+from scipy.interpolate import InterpolatedUnivariateSpline
+from scipy.integrate import quad
+from scipy.interpolate import PchipInterpolator
 import Bao
 
 import new_desi_bao_R2
@@ -96,14 +99,26 @@ def equation(t, variable, params):
 
     var = np.array([eqd, eqm, eqb, eqgam, eqneu, eqh, eqdl])
 
+    # if np.any(np.isnan(var)) or np.any(np.isinf(var)):
+    #     return np.array([0.1,0.1,0.1,0.1,0.1,0.1,0.1])
+
     return var
 
 
 
 def ode_sol(params):
-    od0, H0, rd, rs_val, obh, Neff = params
 
-    # Neff = 3.046
+    # od0, H0, rd_val, obh, Neff = params
+    
+    od0, H0, obh= params
+
+    Neff = 3.046  
+
+    # rs_val = 144.39 # to obtain the valid constraint from the planck likelihood, you can either fix your rs_val or evaluate it from the formula. Below I have presented the code to estimate the value of it by doing the integration. This method is valid for any cosmological model and have not use any kind of approximations. Hence, the algorithm is highly optimized and fast. Whenever, you construct your own model, try to compute the rs_val from the formula. Never use the planck result, otherwise you will never going to see the actual change that occurs with your model. 
+
+    # For rd_val, you can treat it as a free parameter. This parameter is corresponding to BAO. You can able to see the different values of it if you use different models with different data set. I will explain these in detail in my youtube video. 
+
+    
 
     # you may fix Neff= 3.046 which is good if you only use cmb_data, since this data can't constraint N_eff, hence your H_0 won't be constrained. I will provide more generalize data later where you can get constraint on N_eff. So, my advice will be if you are not using desi Bao or BBN data you may fix Neff, other wise it won't produce good result. Once you will fix it you will get H0 = 66-68 km/s/Mpc. Once you fix Neff, kindly update your polychord or emcee sample accordingly. 
 
@@ -111,9 +126,9 @@ def ode_sol(params):
 
     # Neff = 3.046  # for lambdaCDM.
     tt= 2.7255 # cmb temperature in kelvin.
-    # ogh = 3* (tt/2.7)**4/(4*31500) # this is the photon density. \Omega_{\gamma 0} h^2
+    ogh = 3* (tt/2.7)**4/(4*31500) # this is the photon density. \Omega_{\gamma 0} h^2
 
-    ogh = 2.47298 * 1e-5  # this is a photon density 
+    # ogh = 2.47298 * 1e-5  # this is a photon density 
 
     og0 = ogh/hh**2  # photon minimally coupled.
 
@@ -135,7 +150,7 @@ def ode_sol(params):
 
     param = np.array([w0, wa])
 
-    cmb_params = np.array([om0+ob0, H0, obh])  # om0 refers to dark matter density. and ob0 referes to baryon matter density. obh is \Omega_{b0}(H0/100)^2
+    cmb_params = np.array([om0+ob0, H0, obh, omh])  # om0 refers to dark matter density. and ob0 referes to baryon matter density. obh is \Omega_{b0}(H0/100)^2
 
     if omh<0:
         return -np.inf
@@ -151,7 +166,7 @@ def ode_sol(params):
 
 
     sol = solve_ivp(lambda t, y: equation(t, y, param),
-            [0, -20], yi, t_eval=np.linspace(0.0,-20,tmax), method='BDF', rtol = 1e-4, atol = 1e-3)
+            [0, -20], yi, t_eval=np.linspace(0.0,-20,tmax), method='BDF', rtol = 1e-6, atol = 1e-3)
 
 
     t_sol = sol.t
@@ -160,20 +175,112 @@ def ode_sol(params):
 
     odsol, omsol, obsol, ogsol, orsol, h_sol, dlh0_sol = sol.y
 
+    # if np.any(dlh0_sol<0):
+    #     return -np.inf
+
 
     hhsol = H0 * h_sol  # This is in km/s/Mpc unit.
     dlsol =  dlh0_sol/H0  # This is in km/s/Mpc unit.  # this is normal D_L.
     
 
-    H_val = interp1d(zz, hhsol, kind='cubic')
+    H_val = CubicSpline(zz, hhsol)
 
-    dl_val=interp1d(zz, dlsol, kind='cubic')
+    dl_val=CubicSpline(zz, dlsol)
 
     res_hubble = np.zeros(len(z_dataH))
 
     res_hubble = H_val(z_dataH) -  H_obs_data
 
     chi_hubble = -0.5 * (res_hubble.T @ H_inv @ res_hubble)
+
+
+   
+# Here, we are prescribing how to compute the sound horizon. This is my algorithm highly optimized and fast. If you use any of my alogirithm, don't forget to mention it and cite my article. 
+    def sound_horizon_cal(z_lower):
+
+        t_vals = t_sol
+        
+        
+        H = h_sol  # Here we are getting h. this is varying with N. and hence we will get rd*H0 
+
+        valid = (H>0)
+
+        if not np.any(valid):
+            return np.nan  # integral not possible
+        
+        if not len(valid) ==tmax:
+            return np.nan
+
+        t_vals = t_vals[valid]
+        H = H[valid]
+
+        idx = np.argsort(t_vals)
+        t_vals = t_vals[idx]
+        H = H[idx]
+
+        
+        H_spline = PchipInterpolator(t_vals, H)  # here it is interpolating the h values. So, that you can integrate it between any redshift, provided that your limit exists between the h evolution you have obtained from the differential equation. 
+
+        
+        def integrand_N(N):
+
+            HN = H_spline(N)
+            if HN <= 0:
+                raise ValueError("Non-positive H encountered")
+
+            arg = 3 * (1e5) * np.exp(-N) / (
+                HN * np.sqrt(3 * (1 + (3 * obh) / (4 * ogh * np.exp(-N))))
+            )
+
+            # this integrand is not same as the standard intagrand. Here, I have transformed it and expressed interms of N = log a. 
+            
+            return arg
+
+        # Define integration bounds (must be within t_vals range!)
+        t_lower = np.log(1 / (1 + z_lower))  # in the case of rd, z_lower = 1059.94
+        t_upper = -18  
+
+        r_d, err = quad(integrand_N, t_upper, t_lower, epsabs=1e-10, epsrel=1e-10,limit=200)
+
+        # 
+        if np.iscomplex(r_d) or np.isnan(r_d):
+            
+            return np.nan
+
+        return r_d
+
+    b1= 0.313*(dmh)**(-0.419)*(1+0.607*(dmh)**0.674)
+
+    b2 = 0.238*(dmh)**0.223
+
+    zdd = 1345.0*((dmh)**(0.251) * (1+b1 * obh**(b2))/(1+0.659*(dmh)**0.828))
+
+    # zdd= 1059.60
+
+    rd_val1 = sound_horizon_cal(zdd)   # this guy calculates the rd*H0. If you wish to vary your rd as a free parameter for the BAO result, you can just comment it out, and put rd as free parameter in the initial line.  
+
+    
+
+    rd_val = rd_val1/H0   # this is actual rd value. 
+
+      
+
+    # print("The value of r_d is ", rd_val)
+
+    if np.isnan(rd_val) or np.isinf(rd_val):
+        return -np.inf
+    
+    g1= 0.0783*(obh)**(-0.238)/ (1+39.5*(obh)**0.763)
+
+    g2 = 0.56*(1+21.1*(obh)**1.81)
+    
+    zs = 1047*(1+0.00124*(obh)**(-0.738)) * (1+g1 * (dmh)**(g2))
+    # zs = 1090.0
+
+    rs_val1 = sound_horizon_cal(zs) 
+
+    rs_val = rs_val1/H0  # this is the sound horizon distance in Mpc at the photon recombination epoch. This estimation is necessary if you are using compress planck data. If you treat rs_val as a free paramter, you will never be going to get a good result. However, you will get a result when you will use an external data set. But it is useful not to vary rs as long as you're using planck data. However, when you use BAO data, you can vary rd as a free paramter. Since, planck data constraint your H_0, hence, it will automatically constraint the rd for BAO data. Without using BAO, you will not able to get any constraint on rd. 
+        
 
     
     def chi_sn(dl_val, redshift):
@@ -212,18 +319,18 @@ def ode_sol(params):
 
     # BAO calculation 
 
-    chi_bao_cmb = Bao.cmb_bao(dl_val, H_val, rd) 
+    # chi_bao_cmb = Bao.cmb_bao(dl_val, H_val, rd_val)
 
-    chi_sn_pantheon = chi_sn_mb_pantheon(dl_val, z_cmb_pan, z_hel_pan)
+    # chi_sn_pantheon = chi_sn_mb_pantheon(dl_val, z_cmb_pan, z_hel_pan)
 
-    chi_bao_desi = new_desi_bao_R2.desi_bao(dl_val, H_val, rd)
+    # chi_bao_desi = new_desi_bao_R2.desi_bao(dl_val, H_val, rd_val)
 
-    chi_planck = planck_like.planck_chi(dl_val, H_val, cmb_params, rs_val, 1089.90)  # New likelihood has been updated for this.
+    chi_planck = planck_like.planck_chi(dl_val, H_val, cmb_params, rs_val, zs)  # New likelihood has been updated for this. Don't put the value of zs by your hand. There is a code above which will compute zs for any model. 
 
     # you can either compute zs using the paper mentioned in the planck likelihood
     
 
-    chi_tot =   chi_planck
+    chi_tot =  chi_planck  # you can just do the algebraic sum of the likelihood for different data. 
 
     if np.any(np.isinf(chi_tot)):
         return -np.inf
