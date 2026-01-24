@@ -1,8 +1,8 @@
 # ------ New Updates --------
 
-[1] Added the Polychord sampler, which is way advanced than emcee sampler to obtain constraint on the higher dimensional paramter space.
-
-[2] Added a Jupyter file for AIC and BIC calculation which will read the chains_new directory I have created. 
+[1] Updated the likelihood of Planck, and added the algorithm to compute the sound horizon. 
+[2] Changed the equations such that now you will be able to compare a number of parameteric models. 
+[3] The algorithm to compute the sound horizon is highly optimized and robust. Now you can directly test a number of models including the scalar field. 
 
 # ------ Older Updates --------
 
