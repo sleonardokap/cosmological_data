@@ -47,7 +47,7 @@ data_H = np.loadtxt("cc_data.txt")
 z_dataH = data_H[:, 0]
 
 
-
+# z_desi_bao = new_desi_bao_R2.z_desi_bao_eff
 data_pl = compress_planck.data_cmb
 
 rank = MPI.COMM_WORLD.Get_rank()
@@ -163,6 +163,7 @@ if rank==0:
     print("All computations are now finished.")
 
 # mpirun -np 11 python -u polychord_exec.py  use this command to run the file in the terminal. It will use multiproccessing. 
+
 
 
 
