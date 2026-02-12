@@ -323,14 +323,14 @@ def ode_sol(params):
 
     # chi_sn_pantheon = chi_sn_mb_pantheon(dl_val, z_cmb_pan, z_hel_pan)
 
-    # chi_bao_desi = new_desi_bao_R2.desi_bao(dl_val, H_val, rd_val)
+    chi_bao_desi = new_desi_bao_R2.desi_bao(dl_val, H_val, rd_val)
 
     chi_planck = planck_like.planck_chi(dl_val, H_val, cmb_params, rs_val, zs)  # New likelihood has been updated for this. Don't put the value of zs by your hand. There is a code above which will compute zs for any model. 
 
     # you can either compute zs using the paper mentioned in the planck likelihood
     
 
-    chi_tot =  chi_planck  # you can just do the algebraic sum of the likelihood for different data. 
+    chi_tot =  chi_planck + chi_bao_desi # you can just do the algebraic sum of the likelihood for different data. 
 
     if np.any(np.isinf(chi_tot)):
         return -np.inf
@@ -354,6 +354,7 @@ def log_prob( params):
 
 
 # To sample you can use emcee or polychord. Both sampling can be found in the folder. However make sure to see the parameter list. You may need to make some changes into it. 
+
 
 
 
